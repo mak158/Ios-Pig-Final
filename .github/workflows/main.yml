@@ -8,7 +8,15 @@ jobs:
       - uses: actions/checkout@v4
       - name: Download Godot iOS Template & Build IPA
         run: |
-          curl -L "https://github.com" -o templates.zip || curl -L "https://github.com" -o templates.zip
+          TAG="4.7.2-stable"
+          URL="https://github.com{TAG}/Godot_v${TAG}_export_templates.tpz"
+          echo "Downloading from $URL"
+          curl -fL "$URL" -o templates.zip || {
+            echo "Fallback to latest release..."
+            LATEST_URL=$(curl -s https://github.com | grep "browser_download_url.*export_templates.tpz" | cut -d '"' -f 4 | head -n 1)
+            echo "Downloading from $LATEST_URL"
+            curl -fL "$LATEST_URL" -o templates.zip
+          }
           unzip -q templates.zip "templates/ios.zip"
           unzip -q templates/ios.zip "libgodot.ios.release.xcframework/ios-arm64/libgodot.a"
           mkdir -p game.xcframework/ios-arm64
