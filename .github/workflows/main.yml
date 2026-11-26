@@ -1,0 +1,29 @@
+name: Build iOS IPA
+on: [push]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Godot iOS Template & Build IPA
+        run: |
+          curl -L "https://github.com" -o templates.zip || curl -L "https://github.com" -o templates.zip
+          unzip -q templates.zip "templates/ios.zip"
+          unzip -q templates/ios.zip "libgodot.ios.release.xcframework/ios-arm64/libgodot.a"
+          mkdir -p game.xcframework/ios-arm64
+          cp libgodot.ios.release.xcframework/ios-arm64/libgodot.a game.xcframework/ios-arm64/libgodot.a
+          rm -rf templates.zip templates libgodot.ios.release.xcframework
+          xcodebuild -project "game.xcodeproj" \
+            -scheme "game" \
+            -configuration Release \
+            -sdk iphoneos \
+            -archivePath build/Game.xcarchive \
+            archive CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+          mkdir -p Payload
+          cp -r build/Game.xcarchive/Products/Applications/*.app Payload/
+          zip -r Game.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: iOS-IPA
+          path: Game.ipa
